@@ -997,6 +997,31 @@ void Poll1770(int NCycles) {
 	}
 }
 
+void GetMaxSects(int DscDrive)
+{
+	DiscType Type = DscType[DscDrive];
+
+	switch (Type) {
+	case DiscType::SSD:
+	case DiscType::DSD:
+		MaxSects[DscDrive] = 9;
+		break;
+	case DiscType::IMG:
+		MaxSects[DscDrive] = 4;
+		break;
+	case DiscType::DOS:
+		MaxSects[DscDrive] = 8;
+		break;
+	case DiscType::SDD:
+	case DiscType::DDD:
+		MaxSects[DscDrive] = 17;
+		break;
+	case DiscType::ADFS:
+		MaxSects[DscDrive] = 15;
+		break;
+	}
+}
+
 Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType Type) {
 	Disc1770Result Result = Disc1770Result::Failed;
 	long int TotalSectors;
@@ -1059,10 +1084,10 @@ Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType
 	if (Type == DiscType::SSD) {
 		SecSize[DscDrive] = 256;
 		DiskDensity[DscDrive] = 1;
-		DiscStep[DscDrive] = 2560;
+		DiscStep[DscDrive] = 256 * 10;
 		DiscStrt[DscDrive] = 0;
 		DefStart[DscDrive] = 80 * 10 * 256; // 0;
-		TrkLen[DscDrive] = 2560;
+		TrkLen[DscDrive] = 256 * 10;
 	}
 	else if (Type == DiscType::DSD) {
 		SecSize[DscDrive] = 256;
@@ -1071,6 +1096,22 @@ Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType
 		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 2560;
 		DefStart[DscDrive] = 2560;
 		TrkLen[DscDrive] = 2560;
+	}
+	else if (Type == DiscType::SDD) {
+		SecSize[DscDrive] = 256;
+		DiskDensity[DscDrive] = 0;
+		DiscStep[DscDrive] = 256 * 18;
+		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 18 * 256;
+		DefStart[DscDrive] = 80 * 18 * 256;
+		TrkLen[DscDrive] = 256 * 18;
+	}
+	else if (Type == DiscType::DDD) {
+		SecSize[DscDrive] = 256;
+		DiskDensity[DscDrive] = 0;
+		DiscStep[DscDrive] = 512 * 18;
+		DiscStrt[DscDrive] = CurrentHead[DscDrive] * 512 * 18;
+		DefStart[DscDrive] = 256 * 18;
+		TrkLen[DscDrive] = 256 * 18;
 	}
 	else if (Type == DiscType::IMG) {
 		SecSize[DscDrive] = 1024;
@@ -1115,10 +1156,7 @@ Disc1770Result Load1770DiscImage(const char *DscFileName, int DscDrive, DiscType
 	}
 
 	DscType[DscDrive] = Type;
-	MaxSects[DscDrive] = (Type == DiscType::SSD || Type == DiscType::DSD) ? 9 : 15;
-	if (Type == DiscType::IMG) MaxSects[DscDrive] = 4;
-	if (Type == DiscType::DOS) MaxSects[DscDrive] = 8;
-
+	GetMaxSects(DscDrive);
 	return Result;
 }
 
@@ -1181,12 +1219,8 @@ void Reset1770() {
 	SetMotor(1, false);
 	Status = 0;
 	ExtControl = DRIVE_CONTROL_SELECT_DRIVE_0; // Drive 0 selected, single density, side 0
-	MaxSects[0] = (DscType[0] == DiscType::SSD || DscType[0] == DiscType::DSD) ? 9 : 15;
-	MaxSects[1] = (DscType[1] == DiscType::SSD || DscType[1] == DiscType::DSD) ? 9 : 15;
-	if (DscType[0] == DiscType::IMG) MaxSects[0] = 4;
-	if (DscType[1] == DiscType::IMG) MaxSects[1] = 4;
-	if (DscType[0] == DiscType::DOS) MaxSects[0] = 8;
-	if (DscType[1] == DiscType::DOS) MaxSects[1] = 8;
+	GetMaxSects(0);
+	GetMaxSects(1);
 }
 
 void Close1770Disc(int Drive) {

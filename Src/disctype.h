@@ -26,7 +26,9 @@ enum class DiscType : unsigned char {
 	DSD  = 1,
 	ADFS = 2,
 	IMG  = 3,
-	DOS  = 4
+	DOS  = 4,
+	SDD  = 5,
+	DDD  = 6
 };
 
 #endif

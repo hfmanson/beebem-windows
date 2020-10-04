@@ -138,7 +138,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 	char FileName[256];
 	int gotName = false;
 	const char* filter =
-		"Auto (*.ssd;*.dsd;*.ad*;*.img)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos\0"
+		"Auto (*.ssd;*.dsd;*.ad*;*.img;*.sdd;*.ddd)\0*.ssd;*.dsd;*.adl;*.adf;*.img;*.dos;*.sdd;*.ddd\0"
 		"ADFS Disc (*.adl;*.adf)\0*.adl;*.adf\0"
 		"Single Sided Disc (*.ssd)\0*.ssd\0"
 		"Double Sided Disc (*.dsd)\0*.dsd\0"
@@ -170,6 +170,7 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		bool adfs = false;
 		bool img = false;
 		bool dos = false;
+		bool dd = false;
 
 		switch (fileDialog.GetFilterIndex())
 		{
@@ -186,8 +187,15 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 						adfs = true;
 					else if (_stricmp(ext+1, "img") == 0)
 						img = true;
-					else if (_stricmp(ext+1, "dos") == 0)
+					else if (_stricmp(ext + 1, "dos") == 0)
 						dos = true;
+					else if (_stricmp(ext + 1, "sdd") == 0)
+						dd = true;
+					else if (_stricmp(ext + 1, "ddd") == 0)
+					{
+						dsd = true;
+						dd = true;
+					}
 				}
 				break;
 			}
@@ -207,14 +215,14 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 				if (NativeFDC)
 					LoadSimpleDSDiscImage(FileName, Drive, 80);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::DSD);
+					Load1770DiscImage(FileName, Drive, dd ? DiscType::DDD : DiscType::DSD);
 			}
 			if (!dsd && !adfs && !dos)
 			{
 				if (NativeFDC)
 					LoadSimpleDiscImage(FileName, Drive, 0, 80);
 				else
-					Load1770DiscImage(FileName, Drive, DiscType::SSD);
+					Load1770DiscImage(FileName, Drive, dd ? DiscType::SDD : DiscType::SSD);
 			}
 			if (adfs)
 			{
@@ -229,9 +237,9 @@ int BeebWin::ReadDisc(int Drive, bool bCheckForPrefs)
 		{
 			// Master 128
 			if (dsd)
-				Load1770DiscImage(FileName, Drive, DiscType::DSD);
+				Load1770DiscImage(FileName, Drive, dd ? DiscType::DDD : DiscType::DSD);
 			if (!dsd && !adfs && !img && !dos)				 // Here we go a transposing...
-				Load1770DiscImage(FileName, Drive, DiscType::SSD);
+				Load1770DiscImage(FileName, Drive, dd ? DiscType::SDD : DiscType::SSD);
 			if (adfs)
 				Load1770DiscImage(FileName, Drive, DiscType::ADFS); // ADFS OO La La!
 			if (img)
